@@ -77,16 +77,24 @@ public class ExampleMod implements ModInitializer {
         if (signTexts != null) {
             for (Text line : signTexts) {
                 if (line.getString() != null) {
-                    String[] filterText = line.getString().trim().split(" ");
+                    String[] filterText = line.getString().trim().split("\\s+");
                     if (filterText.length > 1) {
-                        if (StringUtils.isNumeric(filterText[1])) {
-                            int enchLevel = Integer.parseInt(filterText[1]);
-                            if (enchLevel > 0) {
-                                filters.add(new EnchFilter(filterText[0], enchLevel));
+                        try {
+                            if (StringUtils.isNumeric(filterText[1])) {
+                                int enchLevel = Integer.parseInt(filterText[1]);
+                                int maxPrice = 0;
+                                if (filterText.length > 2 && StringUtils.isNumeric(filterText[2])) {
+                                    maxPrice = Integer.parseInt(filterText[2]);
+                                }
+                                if (enchLevel > 0) {
+                                    filters.add(new EnchFilter(filterText[0], enchLevel, maxPrice));
+                                }
                             }
+                        } catch (NumberFormatException e) {
+                            // Ignore invalid or overflowing numbers
                         }
-                    } else {
-                        filters.add(new EnchFilter(filterText[0], 0));
+                    } else if (filterText.length == 1 && !filterText[0].isEmpty()) {
+                        filters.add(new EnchFilter(filterText[0], 0, 0));
                     }
                 }
             }
@@ -162,7 +170,8 @@ public class ExampleMod implements ModInitializer {
                         if (sellItem.getItem() instanceof EnchantedBookItem) {
                             // Get enchantments on the book
                             for (Map.Entry<Enchantment, Integer> entry : EnchantmentHelper.get(sellItem).entrySet()) {
-                                String idAsString = entry.getKey().getTranslationKey().split(enchantmentRegex)[1];
+                                String translationKey = entry.getKey().getTranslationKey();
+                                String idAsString = translationKey.substring(translationKey.lastIndexOf('.') + 1);
                                 int intValue = entry.getValue();
                                 for (EnchFilter filter : filters) {
                                     int valueToSearch = filter.enchLevel;
@@ -170,6 +179,9 @@ public class ExampleMod implements ModInitializer {
                                         valueToSearch = entry.getKey().getMaxLevel();
                                     }
                                     if (StringUtils.isNotBlank(filter.enchName) && idAsString.toLowerCase().startsWith(filter.enchName.toLowerCase()) && intValue == valueToSearch) {
+                                        if (filter.maxPrice > 0 && trade.getOriginalFirstBuyItem().getCount() > filter.maxPrice) {
+                                            continue;
+                                        }
                                         cooldownMap.put(playerUUID, currentTime);
                                         return FilterResult.SUCCESS;
                                     }
@@ -184,7 +196,7 @@ public class ExampleMod implements ModInitializer {
         return FilterResult.FAILED;
     }
 
-    public record EnchFilter(String enchName, int enchLevel) {
+    public record EnchFilter(String enchName, int enchLevel, int maxPrice) {
     }
 
     enum FilterResult {
