@@ -220,6 +220,39 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
         updateSuggestions();
     }
 
+    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
+    private void onMouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean flag, CallbackInfoReturnable<Boolean> cir) {
+        if (suggestionsVisible && !suggestions.isEmpty() && event.button() == 0) {
+            double mouseX = event.x();
+            double mouseY = event.y();
+
+            int boxX = 15;
+            int boxY = 30;
+
+            int maxNameWidth = 0;
+            int maxLevelWidth = 0;
+            for (EnchantmentInfo s : suggestions) {
+                maxNameWidth = Math.max(maxNameWidth, this.font.width(s.path));
+                maxLevelWidth = Math.max(maxLevelWidth, this.font.width(getRoman(s.maxLevel)));
+            }
+            int boxWidth = Math.max(110, 22 + maxNameWidth + 12 + maxLevelWidth + 8);
+
+            int currentY = boxY;
+            for (int i = 0; i < suggestions.size(); i++) {
+                boolean isHovered = (mouseX >= boxX && mouseX <= boxX + boxWidth && mouseY >= currentY - 1 && mouseY < currentY + 17);
+                if (isHovered) {
+                    applySuggestion(suggestions.get(i));
+                    suggestionsVisible = false;
+                    suggestions.clear();
+                    cir.setReturnValue(true);
+                    cir.cancel();
+                    return;
+                }
+                currentY += 18;
+            }
+        }
+    }
+
     @Inject(method = "extractRenderState", at = @At("TAIL"))
     private void onExtractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTick, CallbackInfo ci) {
         if (suggestionsVisible && !suggestions.isEmpty()) {
