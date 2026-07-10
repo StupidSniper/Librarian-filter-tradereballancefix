@@ -220,8 +220,8 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
         updateSuggestions();
     }
 
-    @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
-    private void onMouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean flag, CallbackInfoReturnable<Boolean> cir) {
+    @Override
+    public boolean mouseClicked(net.minecraft.client.input.MouseButtonEvent event, boolean flag) {
         if (suggestionsVisible && !suggestions.isEmpty() && event.button() == 0) {
             double mouseX = event.x();
             double mouseY = event.y();
@@ -244,13 +244,12 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
                     applySuggestion(suggestions.get(i));
                     suggestionsVisible = false;
                     suggestions.clear();
-                    cir.setReturnValue(true);
-                    cir.cancel();
-                    return;
+                    return true;
                 }
                 currentY += 18;
             }
         }
+        return super.mouseClicked(event, flag);
     }
 
     @Inject(method = "extractRenderState", at = @At("TAIL"))
