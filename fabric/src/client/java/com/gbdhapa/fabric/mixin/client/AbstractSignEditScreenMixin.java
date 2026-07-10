@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import com.gbdhapa.EnchantmentDescriptions;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,49 +34,6 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
 
     @Unique
     private static final ItemStack ENCHANTED_BOOK_STACK = new ItemStack(Items.ENCHANTED_BOOK);
-
-    @Unique
-    private static final java.util.Map<String, String> ENCHANTMENT_DESCRIPTIONS = java.util.Map.ofEntries(
-        java.util.Map.entry("aqua_affinity", "Increases underwater mining speed."),
-        java.util.Map.entry("bane_of_arthropods", "Increases damage to arthropods (spiders, bees, silverfish)."),
-        java.util.Map.entry("blast_protection", "Reduces explosion damage and knockback."),
-        java.util.Map.entry("breach", "Reduces the effectiveness of the target's armor."),
-        java.util.Map.entry("channeling", "Summons a lightning bolt when a trident hits a target during a thunderstorm."),
-        java.util.Map.entry("curse_of_binding", "Prevents removal of cursed items from armor slots."),
-        java.util.Map.entry("curse_of_vanishing", "Destroys the item upon death."),
-        java.util.Map.entry("depth_strider", "Increases underwater movement speed."),
-        java.util.Map.entry("density", "Increases damage dealt by fall distance (Mace)."),
-        java.util.Map.entry("efficiency", "Increases mining speed."),
-        java.util.Map.entry("feather_falling", "Reduces fall and ender pearl teleportation damage."),
-        java.util.Map.entry("fire_aspect", "Sets target on fire."),
-        java.util.Map.entry("fire_protection", "Reduces fire damage and burn time."),
-        java.util.Map.entry("flame", "Sets shot arrows on fire."),
-        java.util.Map.entry("fortune", "Increases block drops (ores, seeds, etc.)."),
-        java.util.Map.entry("frost_walker", "Freezes water into ice under the player's feet."),
-        java.util.Map.entry("impaling", "Deals extra damage to aquatic mobs."),
-        java.util.Map.entry("infinity", "Shoots arrows without consuming them."),
-        java.util.Map.entry("knockback", "Increases knockback dealt to mobs."),
-        java.util.Map.entry("looting", "Increases mob drops."),
-        java.util.Map.entry("loyalty", "Trident returns after being thrown."),
-        java.util.Map.entry("luck_of_the_sea", "Increases chance of getting good loot while fishing."),
-        java.util.Map.entry("lure", "Decreases bite time while fishing."),
-        java.util.Map.entry("mending", "Repairs item durability using experience."),
-        java.util.Map.entry("multishot", "Shoots 3 arrows for the cost of 1."),
-        java.util.Map.entry("piercing", "Arrows pass through entities."),
-        java.util.Map.entry("power", "Increases bow arrow damage."),
-        java.util.Map.entry("projectile_protection", "Reduces projectile damage (arrows, fireballs)."),
-        java.util.Map.entry("protection", "Reduces most types of damage."),
-        java.util.Map.entry("punch", "Increases bow knockback."),
-        java.util.Map.entry("quick_charge", "Decreases crossbow reloading time."),
-        java.util.Map.entry("respiration", "Extends underwater breathing time."),
-        java.util.Map.entry("riptide", "Launches the player when throwing trident in water/rain."),
-        java.util.Map.entry("sharpness", "Increases melee damage."),
-        java.util.Map.entry("silk_touch", "Blocks drop themselves instead of their normal items."),
-        java.util.Map.entry("smite", "Increases damage to undead mobs (zombies, skeletons, etc.)."),
-        java.util.Map.entry("sweeping_edge", "Increases sweeping attack damage."),
-        java.util.Map.entry("thorns", "Damages attackers."),
-        java.util.Map.entry("unbreaking", "Decreases durability usage chance.")
-    );
 
     @Unique
     private static class EnchantmentInfo {
@@ -303,7 +261,7 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
 
                 // If hovered, set tooltip
                 if (isHovered) {
-                    String desc = ENCHANTMENT_DESCRIPTIONS.get(s.path);
+                    String desc = EnchantmentDescriptions.get(s.path);
                     if (desc != null) {
                         List<Component> tooltipText = new ArrayList<>();
                         String formattedName = s.path.substring(0, 1).toUpperCase() + s.path.substring(1).replace('_', ' ');
