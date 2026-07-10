@@ -32,6 +32,9 @@ import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -274,6 +277,65 @@ public class RerollLogic {
                 world.sendParticles(ParticleTypes.ANGRY_VILLAGER, clickedPos.getX() + 0.5, clickedPos.getY() + 1, clickedPos.getZ() + 0.5, 8, 0.3, 0.3, 0.3, 0.01);
             }
         }
+    }
+
+    public static int executeFind(CommandSourceStack source, String query) throws com.mojang.brigadier.exceptions.CommandSyntaxException {
+        net.minecraft.server.level.ServerPlayer player = source.getPlayerOrException();
+        ServerLevel level = source.getLevel();
+
+        double radius = 128.0;
+        AABB box = player.getBoundingBox().inflate(radius);
+        List<Villager> villagers = level.getEntitiesOfClass(
+            Villager.class,
+            box,
+            v -> v.isAlive()
+        );
+
+        int matchCount = 0;
+        for (Villager villager : villagers) {
+            MerchantOffers offers = villager.getOffers();
+            boolean matchFound = false;
+            for (MerchantOffer trade : offers) {
+                if (trade.getResult().getItem() == Items.ENCHANTED_BOOK) {
+                    ItemEnchantments enchantments = trade.getResult().getOrDefault(
+                        DataComponents.STORED_ENCHANTMENTS,
+                        ItemEnchantments.EMPTY
+                    );
+                    for (var entry : enchantments.entrySet()) {
+                        Holder<Enchantment> enchHolder = entry.getKey();
+                        String enchName = enchHolder.unwrapKey().map(k -> k.identifier().getPath()).orElse("unknown");
+                        if (enchName.toLowerCase().contains(query.toLowerCase())) {
+                            matchFound = true;
+                            break;
+                        }
+                    }
+                }
+                if (matchFound) {
+                    break;
+                }
+            }
+
+            if (matchFound) {
+                // Apply GLOWING effect for 30 seconds (600 ticks)
+                villager.addEffect(new MobEffectInstance(
+                    MobEffects.GLOWING,
+                    600, // 30 seconds
+                    0,
+                    false,
+                    false
+                ));
+                matchCount++;
+            }
+        }
+
+        final int count = matchCount;
+        if (count > 0) {
+            source.sendSuccess(() -> Component.literal("§aFound " + count + " villager(s) offering '" + query + "'. They are now glowing for 30 seconds!"), true);
+        } else {
+            source.sendFailure(Component.literal("No loaded villagers found offering '" + query + "'."));
+        }
+
+        return count;
     }
 
     public record TradeFilter(String filterName, int enchLevel, int price) {}

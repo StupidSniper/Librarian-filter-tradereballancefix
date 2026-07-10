@@ -104,6 +104,18 @@ public class LibrarianfilterNeoForge {
                             return 1;
                         })
                 )
+                .then(Commands.literal("find")
+                        .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
+                                .executes(context -> {
+                                    String query = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "query");
+                                    try {
+                                        return RerollLogic.executeFind(context.getSource(), query);
+                                    } catch (Exception e) {
+                                        return 0;
+                                    }
+                                })
+                        )
+                )
         );
     }
 
