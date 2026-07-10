@@ -86,6 +86,51 @@ public class LibrarianfilterFabric implements ModInitializer {
                                 ));
                                 return 1;
                             })
+                            .then(Commands.literal("toggle")
+                                    .then(Commands.argument("option", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                            .suggests((context, builder) -> net.minecraft.commands.SharedSuggestionProvider.suggest(new String[]{"enableReroll", "enableEachLevelReroll", "disableTradeRebalance", "enableSignSuggestions"}, builder))
+                                            .executes(context -> {
+                                                String option = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "option");
+                                                boolean newValue = false;
+                                                switch (option) {
+                                                    case "enableReroll":
+                                                        TradeConfig.INSTANCE.enableReroll = !TradeConfig.INSTANCE.enableReroll;
+                                                        newValue = TradeConfig.INSTANCE.enableReroll;
+                                                        break;
+                                                    case "enableEachLevelReroll":
+                                                        TradeConfig.INSTANCE.enableEachLevelReroll = !TradeConfig.INSTANCE.enableEachLevelReroll;
+                                                        newValue = TradeConfig.INSTANCE.enableEachLevelReroll;
+                                                        break;
+                                                    case "disableTradeRebalance":
+                                                        TradeConfig.INSTANCE.disableTradeRebalance = !TradeConfig.INSTANCE.disableTradeRebalance;
+                                                        newValue = TradeConfig.INSTANCE.disableTradeRebalance;
+                                                        break;
+                                                    case "enableSignSuggestions":
+                                                        TradeConfig.INSTANCE.enableSignSuggestions = !TradeConfig.INSTANCE.enableSignSuggestions;
+                                                        newValue = TradeConfig.INSTANCE.enableSignSuggestions;
+                                                        break;
+                                                    default:
+                                                        context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Unknown config option: " + option));
+                                                        return 0;
+                                                }
+                                                TradeConfig.save();
+                                                context.getSource().getServer().getPlayerList().getPlayers().forEach(p -> {
+                                                    ServerPlayNetworking.send(p, new TradeConfigSyncPayload(
+                                                            TradeConfig.INSTANCE.enableReroll,
+                                                            TradeConfig.INSTANCE.enableEachLevelReroll,
+                                                            TradeConfig.INSTANCE.disableTradeRebalance,
+                                                            TradeConfig.INSTANCE.enableSignSuggestions
+                                                    ));
+                                                });
+                                                if (option.equals("disableTradeRebalance")) {
+                                                    TradeConfig.applyTradeRebalanceOverride(context.getSource().getServer());
+                                                }
+                                                final net.minecraft.network.chat.Component msg = net.minecraft.network.chat.Component.literal("Toggled " + option + " to " + newValue);
+                                                context.getSource().sendSuccess(() -> msg, true);
+                                                return 1;
+                                            })
+                                    )
+                            )
                     )
                     .then(Commands.literal("find")
                             .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.word())
