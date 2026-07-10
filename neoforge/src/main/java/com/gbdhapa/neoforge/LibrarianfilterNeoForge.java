@@ -105,7 +105,23 @@ public class LibrarianfilterNeoForge {
                         })
                 )
                 .then(Commands.literal("find")
-                        .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.greedyString())
+                        .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    net.minecraft.commands.CommandSourceStack source = context.getSource();
+                                    try {
+                                        var registry = source.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+                                        java.util.List<String> paths = registry.listElementIds().toList().stream()
+                                                .map(key -> key.identifier().getPath())
+                                                .filter(path -> !path.equals("soul_speed") && !path.equals("swift_sneak") && !path.equals("wind_burst"))
+                                                .toList();
+                                        return net.minecraft.commands.SharedSuggestionProvider.suggest(paths, builder);
+                                    } catch (Exception e) {
+                                        java.util.List<String> paths = com.gbdhapa.EnchantmentDescriptions.DESCRIPTIONS.keySet().stream()
+                                                .filter(path -> !path.equals("soul_speed") && !path.equals("swift_sneak") && !path.equals("wind_burst"))
+                                                .toList();
+                                        return net.minecraft.commands.SharedSuggestionProvider.suggest(paths, builder);
+                                    }
+                                })
                                 .executes(context -> {
                                     String query = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "query");
                                     try {
