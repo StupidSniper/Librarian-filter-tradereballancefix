@@ -32,11 +32,12 @@ public class LibrarianfilterFabric implements ModInitializer {
                 TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
                 TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
                 TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+                TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
                 TradeConfig.save();
 
                 TradeConfig.applyTradeRebalanceOverride(server);
 
-                TradeConfigSyncPayload syncPayload = new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance());
+                TradeConfigSyncPayload syncPayload = new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance(), payload.enableSignSuggestions());
                 for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                     ServerPlayNetworking.send(player, syncPayload);
                 }
@@ -49,7 +50,8 @@ public class LibrarianfilterFabric implements ModInitializer {
                 ServerPlayNetworking.send(context.player(), new OpenConfigScreenPayload(
                         TradeConfig.INSTANCE.enableReroll,
                         TradeConfig.INSTANCE.enableEachLevelReroll,
-                        TradeConfig.INSTANCE.disableTradeRebalance
+                        TradeConfig.INSTANCE.disableTradeRebalance,
+                        TradeConfig.INSTANCE.enableSignSuggestions
                 ));
             }
         });
@@ -79,7 +81,8 @@ public class LibrarianfilterFabric implements ModInitializer {
                                 ServerPlayNetworking.send(player, new OpenConfigScreenPayload(
                                         TradeConfig.INSTANCE.enableReroll,
                                         TradeConfig.INSTANCE.enableEachLevelReroll,
-                                        TradeConfig.INSTANCE.disableTradeRebalance
+                                        TradeConfig.INSTANCE.disableTradeRebalance,
+                                        TradeConfig.INSTANCE.enableSignSuggestions
                                 ));
                                 return 1;
                             })

@@ -11,12 +11,14 @@ public class FabricTradeConfigScreen extends Screen {
     private boolean enableReroll;
     private boolean enableEachLevelReroll;
     private boolean disableTradeRebalance;
+    private boolean enableSignSuggestions;
 
-    public FabricTradeConfigScreen(boolean enableReroll, boolean enableEachLevelReroll, boolean disableTradeRebalance) {
+    public FabricTradeConfigScreen(boolean enableReroll, boolean enableEachLevelReroll, boolean disableTradeRebalance, boolean enableSignSuggestions) {
         super(Component.literal("Trade Reroll Configuration"));
         this.enableReroll = enableReroll;
         this.enableEachLevelReroll = enableEachLevelReroll;
         this.disableTradeRebalance = disableTradeRebalance;
+        this.enableSignSuggestions = enableSignSuggestions;
     }
 
     @Override
@@ -26,7 +28,7 @@ public class FabricTradeConfigScreen extends Screen {
         int buttonWidth = 200;
         int buttonHeight = 20;
         int startX = (this.width - buttonWidth) / 2;
-        int startY = this.height / 4;
+        int startY = this.height / 5; // shifted up slightly to make room
 
         this.addRenderableWidget(Button.builder(Component.literal("Enable Reroll: " + (enableReroll ? "ON" : "OFF")), button -> {
             this.enableReroll = !this.enableReroll;
@@ -43,10 +45,15 @@ public class FabricTradeConfigScreen extends Screen {
             button.setMessage(Component.literal("Disable Trade Rebalance: " + (disableTradeRebalance ? "ON" : "OFF")));
         }).bounds(startX, startY + 60, buttonWidth, buttonHeight).build());
 
+        this.addRenderableWidget(Button.builder(Component.literal("Enable Sign Suggestions: " + (enableSignSuggestions ? "ON" : "OFF")), button -> {
+            this.enableSignSuggestions = !this.enableSignSuggestions;
+            button.setMessage(Component.literal("Enable Sign Suggestions: " + (enableSignSuggestions ? "ON" : "OFF")));
+        }).bounds(startX, startY + 90, buttonWidth, buttonHeight).build());
+
         this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> {
-            ClientPlayNetworking.send(new TradeConfigUpdatePayload(this.enableReroll, this.enableEachLevelReroll, this.disableTradeRebalance));
+            ClientPlayNetworking.send(new TradeConfigUpdatePayload(this.enableReroll, this.enableEachLevelReroll, this.disableTradeRebalance, this.enableSignSuggestions));
             this.onClose();
-        }).bounds(startX, startY + 100, buttonWidth, buttonHeight).build());
+        }).bounds(startX, startY + 130, buttonWidth, buttonHeight).build());
     }
 
     @Override

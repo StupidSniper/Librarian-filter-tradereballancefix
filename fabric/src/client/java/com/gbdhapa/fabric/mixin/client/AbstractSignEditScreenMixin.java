@@ -27,6 +27,7 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
     @Shadow @Final private String[] messages;
     @Shadow private int line;
     @Shadow private TextFieldHelper signField;
+    @Shadow @Final protected net.minecraft.world.level.block.entity.SignBlockEntity sign;
 
     @Unique private List<EnchantmentInfo> suggestions = new ArrayList<>();
     @Unique private int selectedSuggestionIndex = 0;
@@ -140,7 +141,36 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
     }
 
     @Unique
+    private boolean isLecternAttached() {
+        if (this.sign == null) return false;
+        var level = this.sign.getLevel();
+        if (level == null) {
+            level = net.minecraft.client.Minecraft.getInstance().level;
+        }
+        if (level == null) return false;
+        
+        net.minecraft.core.BlockPos pos = this.sign.getBlockPos();
+        net.minecraft.core.BlockPos[] adjacent = new net.minecraft.core.BlockPos[]{
+            pos.north(), pos.south(), pos.east(), pos.west(), pos.above(), pos.below()
+        };
+        
+        for (var adj : adjacent) {
+            var state = level.getBlockState(adj);
+            if (state.is(net.minecraft.world.level.block.Blocks.LECTERN)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Unique
     private void updateSuggestions() {
+        if (!com.gbdhapa.config.TradeConfig.INSTANCE.enableSignSuggestions || !isLecternAttached()) {
+            suggestions.clear();
+            suggestionsVisible = false;
+            return;
+        }
+
         if (messages == null || line < 0 || line >= messages.length) {
             suggestions.clear();
             suggestionsVisible = false;

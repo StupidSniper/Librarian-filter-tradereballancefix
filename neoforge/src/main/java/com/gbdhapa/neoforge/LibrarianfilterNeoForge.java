@@ -40,6 +40,7 @@ public class LibrarianfilterNeoForge {
             TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
             TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
             TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+            TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
         });
 
         registrar.playToServer(TradeConfigUpdatePayload.ID, TradeConfigUpdatePayload.CODEC, (payload, context) -> {
@@ -50,11 +51,12 @@ public class LibrarianfilterNeoForge {
                     TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
                     TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
                     TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+                    TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
                     TradeConfig.save();
 
                     TradeConfig.applyTradeRebalanceOverride(server);
 
-                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance()));
+                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance(), payload.enableSignSuggestions()));
                 }
             });
         });
@@ -66,7 +68,8 @@ public class LibrarianfilterNeoForge {
                     PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                             TradeConfig.INSTANCE.enableReroll,
                             TradeConfig.INSTANCE.enableEachLevelReroll,
-                            TradeConfig.INSTANCE.disableTradeRebalance
+                            TradeConfig.INSTANCE.disableTradeRebalance,
+                            TradeConfig.INSTANCE.enableSignSuggestions
                     ));
                 }
             });
@@ -95,7 +98,8 @@ public class LibrarianfilterNeoForge {
                             PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                                     TradeConfig.INSTANCE.enableReroll,
                                     TradeConfig.INSTANCE.enableEachLevelReroll,
-                                    TradeConfig.INSTANCE.disableTradeRebalance
+                                    TradeConfig.INSTANCE.disableTradeRebalance,
+                                    TradeConfig.INSTANCE.enableSignSuggestions
                             ));
                             return 1;
                         })

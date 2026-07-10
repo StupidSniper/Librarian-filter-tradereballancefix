@@ -17,6 +17,7 @@ public class TradeConfig {
     public boolean enableReroll = true;
     public boolean enableEachLevelReroll = false;
     public boolean disableTradeRebalance = false;
+    public boolean enableSignSuggestions = true;
 
     public static void load() {
         if (CONFIG_FILE.exists()) {
