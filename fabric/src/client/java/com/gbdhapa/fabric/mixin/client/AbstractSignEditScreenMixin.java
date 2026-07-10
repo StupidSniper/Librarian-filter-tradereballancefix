@@ -233,7 +233,7 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
                 maxNameWidth = Math.max(maxNameWidth, this.font.width(s.path));
                 maxLevelWidth = Math.max(maxLevelWidth, this.font.width(getRoman(s.maxLevel)));
             }
-            int boxWidth = Math.max(100, 22 + maxNameWidth + 12 + maxLevelWidth + 8);
+            int boxWidth = Math.max(110, 22 + maxNameWidth + 12 + maxLevelWidth + 8);
 
             int currentY = boxY;
             for (int i = 0; i < suggestions.size(); i++) {
@@ -273,6 +273,9 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
 
                 currentY += 18;
             }
+
+            // Draw the "Tab/Enter to apply" tip in italicized, translucent white text
+            guiGraphics.text(this.font, "§oTab/Enter to apply", boxX + 6, currentY + 4, 0x55FFFFFF, true);
         }
     }
 }
