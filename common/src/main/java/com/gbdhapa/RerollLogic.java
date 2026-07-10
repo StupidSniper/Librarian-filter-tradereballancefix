@@ -291,6 +291,11 @@ public class RerollLogic {
             v -> v.isAlive()
         );
 
+        // First, clear the GLOWING effect from all loaded villagers in range
+        for (Villager villager : villagers) {
+            villager.removeEffect(MobEffects.GLOWING);
+        }
+
         int matchCount = 0;
         for (Villager villager : villagers) {
             MerchantOffers offers = villager.getOffers();
