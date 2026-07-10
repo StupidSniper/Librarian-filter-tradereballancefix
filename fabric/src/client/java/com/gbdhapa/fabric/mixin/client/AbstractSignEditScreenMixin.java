@@ -232,19 +232,18 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
                 boolean isSelected = (i == selectedSuggestionIndex);
                 
                 if (isSelected) {
-                    // Draw a subtle translucent background for the selected suggestion
-                    guiGraphics.fill(boxX, currentY - 1, boxX + boxWidth, currentY + 17, 0x40FFFFFF);
+                    // Draw a subtle translucent dark background for the selected suggestion
+                    guiGraphics.fill(boxX, currentY - 1, boxX + boxWidth, currentY + 17, 0x80000000);
                     
                     // Highlighted text is bright yellow with shadow
-                    guiGraphics.text(this.font, s.path, boxX + 6, currentY + 4, 0xFFFFA0, true);
+                    guiGraphics.text(this.font, s.path, boxX + 22, currentY + 4, 0xFFFFFF00, true);
                 } else {
                     // Inactive text is light gray with shadow
-                    guiGraphics.text(this.font, s.path, boxX + 6, currentY + 4, 0xCCCCCC, true);
+                    guiGraphics.text(this.font, s.path, boxX + 22, currentY + 4, 0xFFCCCCCC, true);
                 }
 
-                // Render the enchanted book icon
-                int iconX = boxX + boxWidth - 36;
-                guiGraphics.fakeItem(ENCHANTED_BOOK_STACK, iconX, currentY);
+                // Render the enchanted book icon at the start (left side)
+                guiGraphics.fakeItem(ENCHANTED_BOOK_STACK, boxX + 2, currentY);
 
                 // Render the max level Roman numeral on the right
                 int levelX = boxX + boxWidth - 16;
