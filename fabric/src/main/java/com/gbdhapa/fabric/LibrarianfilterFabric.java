@@ -68,14 +68,14 @@ public class LibrarianfilterFabric implements ModInitializer {
         // Register Commands
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
             dispatcher.register(Commands.literal("reroll")
-                    .requires(source -> {
-                        try {
-                            return source.getServer().getPlayerList().isOp(new NameAndId(source.getPlayerOrException().getGameProfile()));
-                        } catch (Exception e) {
-                            return false;
-                        }
-                    })
                     .then(Commands.literal("config")
+                            .requires(source -> {
+                                try {
+                                    return source.getServer().getPlayerList().isOp(new NameAndId(source.getPlayerOrException().getGameProfile()));
+                                } catch (Exception e) {
+                                    return false;
+                                }
+                            })
                             .executes(context -> {
                                 ServerPlayer player = context.getSource().getPlayerOrException();
                                 ServerPlayNetworking.send(player, new OpenConfigScreenPayload(
