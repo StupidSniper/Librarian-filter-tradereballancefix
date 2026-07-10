@@ -1,4 +1,4 @@
-package com.gbdhapa.fabric.mixin.client;
+package com.gbdhapa.mixin.client;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;

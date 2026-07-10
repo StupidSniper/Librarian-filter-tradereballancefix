@@ -11,8 +11,13 @@ loom {
     // Common module
 }
 
+repositories {
+	maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	compileOnly "org.spongepowered:mixin:0.8.5"
 }
 
 tasks.withType(JavaCompile).configureEach {

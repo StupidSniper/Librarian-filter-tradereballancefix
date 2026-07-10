@@ -1,4 +1,4 @@
-package com.gbdhapa.fabric.mixin.client;
+package com.gbdhapa.mixin.client;
 
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
