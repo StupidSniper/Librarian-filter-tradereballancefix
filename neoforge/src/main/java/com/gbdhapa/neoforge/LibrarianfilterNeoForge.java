@@ -28,6 +28,7 @@ public class LibrarianfilterNeoForge {
         
         NeoForge.EVENT_BUS.addListener(this::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
+        NeoForge.EVENT_BUS.addListener(this::onServerStarted);
 
         LibrarianfilterNeoForgeClient.init(modEventBus);
     }
@@ -38,17 +39,22 @@ public class LibrarianfilterNeoForge {
         registrar.playToClient(TradeConfigSyncPayload.ID, TradeConfigSyncPayload.CODEC, (payload, context) -> {
             TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
             TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+            TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
         });
 
         registrar.playToServer(TradeConfigUpdatePayload.ID, TradeConfigUpdatePayload.CODEC, (payload, context) -> {
             context.enqueueWork(() -> {
                 ServerPlayer player = (ServerPlayer) context.player();
-                if (player.level().getServer().getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
+                var server = player.level().getServer();
+                if (server.getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
                     TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
                     TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+                    TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
                     TradeConfig.save();
 
-                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll()));
+                    TradeConfig.applyTradeRebalanceOverride(server);
+
+                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance()));
                 }
             });
         });
@@ -59,7 +65,8 @@ public class LibrarianfilterNeoForge {
                 if (player.level().getServer().getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
                     PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                             TradeConfig.INSTANCE.enableReroll,
-                            TradeConfig.INSTANCE.enableEachLevelReroll
+                            TradeConfig.INSTANCE.enableEachLevelReroll,
+                            TradeConfig.INSTANCE.disableTradeRebalance
                     ));
                 }
             });
@@ -87,11 +94,16 @@ public class LibrarianfilterNeoForge {
                             ServerPlayer player = context.getSource().getPlayerOrException();
                             PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                                     TradeConfig.INSTANCE.enableReroll,
-                                    TradeConfig.INSTANCE.enableEachLevelReroll
+                                    TradeConfig.INSTANCE.enableEachLevelReroll,
+                                    TradeConfig.INSTANCE.disableTradeRebalance
                             ));
                             return 1;
                         })
                 )
         );
+    }
+
+    private void onServerStarted(net.neoforged.neoforge.event.server.ServerStartedEvent event) {
+        TradeConfig.applyTradeRebalanceOverride(event.getServer());
     }
 }

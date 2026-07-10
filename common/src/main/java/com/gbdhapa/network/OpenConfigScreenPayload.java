@@ -6,12 +6,13 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-public record OpenConfigScreenPayload(boolean enableReroll, boolean enableEachLevelReroll) implements CustomPacketPayload {
+public record OpenConfigScreenPayload(boolean enableReroll, boolean enableEachLevelReroll, boolean disableTradeRebalance) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<OpenConfigScreenPayload> ID = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("librarian-filter", "open_config_screen"));
     public static final StreamCodec<RegistryFriendlyByteBuf, OpenConfigScreenPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, OpenConfigScreenPayload::enableReroll,
             ByteBufCodecs.BOOL, OpenConfigScreenPayload::enableEachLevelReroll,
+            ByteBufCodecs.BOOL, OpenConfigScreenPayload::disableTradeRebalance,
             OpenConfigScreenPayload::new
     );
 

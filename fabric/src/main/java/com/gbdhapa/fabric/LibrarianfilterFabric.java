@@ -27,23 +27,29 @@ public class LibrarianfilterFabric implements ModInitializer {
 
         // Register Receivers
         ServerPlayNetworking.registerGlobalReceiver(TradeConfigUpdatePayload.ID, (payload, context) -> {
-            if (context.player().level().getServer().getPlayerList().isOp(new NameAndId(context.player().getGameProfile()))) {
+            var server = context.player().level().getServer();
+            if (server.getPlayerList().isOp(new NameAndId(context.player().getGameProfile()))) {
                 TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
                 TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+                TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
                 TradeConfig.save();
 
-                TradeConfigSyncPayload syncPayload = new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll());
-                for (ServerPlayer player : context.player().level().getServer().getPlayerList().getPlayers()) {
+                TradeConfig.applyTradeRebalanceOverride(server);
+
+                TradeConfigSyncPayload syncPayload = new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance());
+                for (ServerPlayer player : server.getPlayerList().getPlayers()) {
                     ServerPlayNetworking.send(player, syncPayload);
                 }
             }
         });
 
         ServerPlayNetworking.registerGlobalReceiver(ConfigRequestPayload.ID, (payload, context) -> {
-            if (context.player().level().getServer().getPlayerList().isOp(new NameAndId(context.player().getGameProfile()))) {
+            var server = context.player().level().getServer();
+            if (server.getPlayerList().isOp(new NameAndId(context.player().getGameProfile()))) {
                 ServerPlayNetworking.send(context.player(), new OpenConfigScreenPayload(
                         TradeConfig.INSTANCE.enableReroll,
-                        TradeConfig.INSTANCE.enableEachLevelReroll
+                        TradeConfig.INSTANCE.enableEachLevelReroll,
+                        TradeConfig.INSTANCE.disableTradeRebalance
                 ));
             }
         });
@@ -51,6 +57,10 @@ public class LibrarianfilterFabric implements ModInitializer {
         // Register Events
         UseBlockCallback.EVENT.register((player, world, hand, hitResult) -> {
             return RerollLogic.handleBlockUse(player, world, hitResult.getBlockPos());
+        });
+
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents.SERVER_STARTED.register(server -> {
+            TradeConfig.applyTradeRebalanceOverride(server);
         });
 
         // Register Commands
@@ -68,7 +78,8 @@ public class LibrarianfilterFabric implements ModInitializer {
                                 ServerPlayer player = context.getSource().getPlayerOrException();
                                 ServerPlayNetworking.send(player, new OpenConfigScreenPayload(
                                         TradeConfig.INSTANCE.enableReroll,
-                                        TradeConfig.INSTANCE.enableEachLevelReroll
+                                        TradeConfig.INSTANCE.enableEachLevelReroll,
+                                        TradeConfig.INSTANCE.disableTradeRebalance
                                 ));
                                 return 1;
                             })

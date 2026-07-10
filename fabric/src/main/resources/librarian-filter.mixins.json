@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.gbdhapa.fabric.mixin.client",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "AbstractSignEditScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

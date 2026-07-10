@@ -10,12 +10,14 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 public class NeoForgeTradeConfigScreen extends Screen {
     private boolean enableReroll;
     private boolean enableEachLevelReroll;
+    private boolean disableTradeRebalance;
 
-    public NeoForgeTradeConfigScreen(boolean enableReroll, boolean enableEachLevelReroll) {
+    public NeoForgeTradeConfigScreen(boolean enableReroll, boolean enableEachLevelReroll, boolean disableTradeRebalance) {
         super(Component.literal("Trade Reroll Configuration"));
         this.enableReroll = enableReroll;
         this.enableEachLevelReroll = enableEachLevelReroll;
-    }
+        this.disableTradeRebalance = disableTradeRebalance;
+     }
 
     @Override
     protected void init() {
@@ -36,10 +38,15 @@ public class NeoForgeTradeConfigScreen extends Screen {
             button.setMessage(Component.literal("Enable Each Level Reroll: " + (enableEachLevelReroll ? "ON" : "OFF")));
         }).bounds(startX, startY + 30, buttonWidth, buttonHeight).build());
 
+        this.addRenderableWidget(Button.builder(Component.literal("Disable Trade Rebalance: " + (disableTradeRebalance ? "ON" : "OFF")), button -> {
+            this.disableTradeRebalance = !this.disableTradeRebalance;
+            button.setMessage(Component.literal("Disable Trade Rebalance: " + (disableTradeRebalance ? "ON" : "OFF")));
+        }).bounds(startX, startY + 60, buttonWidth, buttonHeight).build());
+
         this.addRenderableWidget(Button.builder(Component.literal("Save"), button -> {
-            ClientPacketDistributor.sendToServer(new TradeConfigUpdatePayload(this.enableReroll, this.enableEachLevelReroll));
+            ClientPacketDistributor.sendToServer(new TradeConfigUpdatePayload(this.enableReroll, this.enableEachLevelReroll, this.disableTradeRebalance));
             this.onClose();
-        }).bounds(startX, startY + 80, buttonWidth, buttonHeight).build());
+        }).bounds(startX, startY + 100, buttonWidth, buttonHeight).build());
     }
 
     @Override

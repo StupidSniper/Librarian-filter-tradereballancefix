@@ -16,6 +16,7 @@ public class TradeConfig {
 
     public boolean enableReroll = true;
     public boolean enableEachLevelReroll = false;
+    public boolean disableTradeRebalance = false;
 
     public static void load() {
         if (CONFIG_FILE.exists()) {
@@ -35,6 +36,35 @@ public class TradeConfig {
             GSON.toJson(INSTANCE, writer);
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    public static void applyTradeRebalanceOverride(net.minecraft.server.MinecraftServer server) {
+        if (server != null) {
+            try {
+                var worldData = server.getWorldData();
+                var currentConfig = worldData.getDataConfiguration();
+                var enabledFeatures = currentConfig.enabledFeatures();
+                
+                boolean hasRebalance = enabledFeatures.contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE);
+                boolean shouldDisable = INSTANCE.disableTradeRebalance;
+                
+                if (shouldDisable && hasRebalance) {
+                    var newFeatures = enabledFeatures.subtract(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
+                    var newConfig = new net.minecraft.world.level.WorldDataConfiguration(currentConfig.dataPacks(), newFeatures);
+                    if (worldData instanceof net.minecraft.world.level.storage.PrimaryLevelData) {
+                        ((net.minecraft.world.level.storage.PrimaryLevelData) worldData).setDataConfiguration(newConfig);
+                    }
+                } else if (!shouldDisable && !hasRebalance) {
+                    var newFeatures = enabledFeatures.join(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
+                    var newConfig = new net.minecraft.world.level.WorldDataConfiguration(currentConfig.dataPacks(), newFeatures);
+                    if (worldData instanceof net.minecraft.world.level.storage.PrimaryLevelData) {
+                        ((net.minecraft.world.level.storage.PrimaryLevelData) worldData).setDataConfiguration(newConfig);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }
