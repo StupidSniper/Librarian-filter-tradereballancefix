@@ -14,6 +14,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,9 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
     @Unique private List<EnchantmentInfo> suggestions = new ArrayList<>();
     @Unique private int selectedSuggestionIndex = 0;
     @Unique private boolean suggestionsVisible = false;
+
+    @Unique
+    private static final ItemStack ENCHANTED_BOOK_STACK = new ItemStack(Items.ENCHANTED_BOOK);
 
     @Unique
     private static class EnchantmentInfo {
@@ -219,34 +224,35 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
         if (suggestionsVisible && !suggestions.isEmpty()) {
             int boxX = 15;
             int boxY = 30;
-            int boxWidth = 150;
-            int boxHeight = 16 + (suggestions.size() * 12) + 12;
+            int boxWidth = 180;
 
-            // Background
-            guiGraphics.fill(boxX, boxY, boxX + boxWidth, boxY + boxHeight, 0xD00A0A0F);
-            // Accent line (blue-purple)
-            guiGraphics.fill(boxX, boxY, boxX + boxWidth, boxY + 2, 0xFF4A4AE2);
-
-            // Title
-            guiGraphics.text(this.font, "Suggestions", boxX + 6, boxY + 5, 0xFFD700, false);
-
-            int currentY = boxY + 16;
+            int currentY = boxY;
             for (int i = 0; i < suggestions.size(); i++) {
                 EnchantmentInfo s = suggestions.get(i);
-                String roman = getRoman(s.maxLevel);
-                String text = "[" + roman + "] " + s.path;
                 boolean isSelected = (i == selectedSuggestionIndex);
+                
                 if (isSelected) {
-                    guiGraphics.fill(boxX + 2, currentY - 1, boxX + boxWidth - 2, currentY + 11, 0x404A4AE2);
-                    guiGraphics.text(this.font, "> " + text, boxX + 6, currentY, 0xFFFFFFFF, false);
+                    // Draw a subtle translucent background for the selected suggestion
+                    guiGraphics.fill(boxX, currentY - 1, boxX + boxWidth, currentY + 17, 0x40FFFFFF);
+                    
+                    // Highlighted text is bright yellow with shadow
+                    guiGraphics.text(this.font, s.path, boxX + 6, currentY + 4, 0xFFFFA0, true);
                 } else {
-                    guiGraphics.text(this.font, "  " + text, boxX + 6, currentY, 0x99FFFFFF, false);
+                    // Inactive text is light gray with shadow
+                    guiGraphics.text(this.font, s.path, boxX + 6, currentY + 4, 0xCCCCCC, true);
                 }
-                currentY += 12;
+
+                // Render the enchanted book icon
+                int iconX = boxX + boxWidth - 36;
+                guiGraphics.fakeItem(ENCHANTED_BOOK_STACK, iconX, currentY);
+
+                // Render the max level Roman numeral on the right
+                int levelX = boxX + boxWidth - 16;
+                String roman = getRoman(s.maxLevel);
+                guiGraphics.text(this.font, roman, levelX, currentY + 4, isSelected ? 0xFFFFFFFF : 0x88FFFFFF, true);
+
+                currentY += 18;
             }
-            
-            // Bottom tips
-            guiGraphics.text(this.font, "Tab/Enter to apply", boxX + 6, currentY + 2, 0x55FFFFFF, false);
         }
     }
 }
