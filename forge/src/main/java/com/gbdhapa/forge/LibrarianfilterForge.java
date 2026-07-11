@@ -1,0 +1,185 @@
+package com.gbdhapa.forge;
+
+import com.gbdhapa.RerollLogic;
+import com.gbdhapa.config.TradeConfig;
+import com.gbdhapa.network.*;
+import com.gbdhapa.forge.client.LibrarianfilterForgeClient;
+import net.minecraft.commands.Commands;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.players.NameAndId;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.common.Mod;
+import net.neoforged.fml.loading.FMLLoader;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.event.RegisterPayloadHandlersEvent;
+import net.minecraftforge.network.registration.PayloadRegistrar;
+
+@Mod("librarian_filter")
+public class LibrarianfilterForge {
+    public LibrarianfilterForge(IEventBus modEventBus) {
+        TradeConfig.load();
+
+        modEventBus.addListener(this::registerPayloads);
+        
+        MinecraftForge.EVENT_BUS.addListener(this::onRightClickBlock);
+        MinecraftForge.EVENT_BUS.addListener(this::registerCommands);
+        MinecraftForge.EVENT_BUS.addListener(this::onServerStarted);
+
+        LibrarianfilterForgeClient.init(modEventBus);
+    }
+
+    private void registerPayloads(RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar("1.0.1");
+
+        registrar.playToClient(TradeConfigSyncPayload.ID, TradeConfigSyncPayload.CODEC, (payload, context) -> {
+            TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
+            TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+            TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+            TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
+        });
+
+        registrar.playToServer(TradeConfigUpdatePayload.ID, TradeConfigUpdatePayload.CODEC, (payload, context) -> {
+            context.enqueueWork(() -> {
+                ServerPlayer player = (ServerPlayer) context.player();
+                var server = player.level().getServer();
+                if (server.getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
+                    TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
+                    TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+                    TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+                    TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
+                    TradeConfig.save();
+
+                    TradeConfig.applyTradeRebalanceOverride(server);
+
+                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance(), payload.enableSignSuggestions()));
+                }
+            });
+        });
+
+        registrar.playToServer(ConfigRequestPayload.ID, ConfigRequestPayload.CODEC, (payload, context) -> {
+            context.enqueueWork(() -> {
+                ServerPlayer player = (ServerPlayer) context.player();
+                if (player.level().getServer().getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
+                    PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
+                            TradeConfig.INSTANCE.enableReroll,
+                            TradeConfig.INSTANCE.enableEachLevelReroll,
+                            TradeConfig.INSTANCE.disableTradeRebalance,
+                            TradeConfig.INSTANCE.enableSignSuggestions
+                    ));
+                }
+            });
+        });
+    }
+
+    private void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        event.setCancellationResult(RerollLogic.handleBlockUse(event.getEntity(), event.getLevel(), event.getPos()));
+        if (event.getCancellationResult().consumesAction()) {
+            event.setCanceled(true);
+        }
+    }
+
+    private void registerCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(Commands.literal("reroll")
+                .then(Commands.literal("config")
+                        .requires(source -> {
+                            try {
+                                return source.getServer().getPlayerList().isOp(new NameAndId(source.getPlayerOrException().getGameProfile()));
+                            } catch (Exception e) {
+                                return false;
+                            }
+                        })
+                        .executes(context -> {
+                            ServerPlayer player = context.getSource().getPlayerOrException();
+                            PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
+                                    TradeConfig.INSTANCE.enableReroll,
+                                    TradeConfig.INSTANCE.enableEachLevelReroll,
+                                    TradeConfig.INSTANCE.disableTradeRebalance,
+                                    TradeConfig.INSTANCE.enableSignSuggestions
+                            ));
+                            return 1;
+                        })
+                        .then(Commands.literal("toggle")
+                                .then(Commands.argument("option", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                        .suggests((context, builder) -> net.minecraft.commands.SharedSuggestionProvider.suggest(new String[]{"enableReroll", "enableEachLevelReroll", "disableTradeRebalance", "enableSignSuggestions"}, builder))
+                                        .executes(context -> {
+                                            String option = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "option");
+                                            boolean newValue = false;
+                                            switch (option) {
+                                                case "enableReroll":
+                                                    TradeConfig.INSTANCE.enableReroll = !TradeConfig.INSTANCE.enableReroll;
+                                                    newValue = TradeConfig.INSTANCE.enableReroll;
+                                                    break;
+                                                case "enableEachLevelReroll":
+                                                    TradeConfig.INSTANCE.enableEachLevelReroll = !TradeConfig.INSTANCE.enableEachLevelReroll;
+                                                    newValue = TradeConfig.INSTANCE.enableEachLevelReroll;
+                                                    break;
+                                                case "disableTradeRebalance":
+                                                    TradeConfig.INSTANCE.disableTradeRebalance = !TradeConfig.INSTANCE.disableTradeRebalance;
+                                                    newValue = TradeConfig.INSTANCE.disableTradeRebalance;
+                                                    break;
+                                                case "enableSignSuggestions":
+                                                    TradeConfig.INSTANCE.enableSignSuggestions = !TradeConfig.INSTANCE.enableSignSuggestions;
+                                                    newValue = TradeConfig.INSTANCE.enableSignSuggestions;
+                                                    break;
+                                                default:
+                                                    context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Unknown config option: " + option));
+                                                    return 0;
+                                            }
+                                            TradeConfig.save();
+                                            PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(
+                                                    TradeConfig.INSTANCE.enableReroll,
+                                                    TradeConfig.INSTANCE.enableEachLevelReroll,
+                                                    TradeConfig.INSTANCE.disableTradeRebalance,
+                                                    TradeConfig.INSTANCE.enableSignSuggestions
+                                            ));
+                                            if (option.equals("disableTradeRebalance")) {
+                                                TradeConfig.applyTradeRebalanceOverride(context.getSource().getServer());
+                                            }
+                                            final net.minecraft.network.chat.Component msg = net.minecraft.network.chat.Component.literal("Toggled " + option + " to " + newValue);
+                                            context.getSource().sendSuccess(() -> msg, true);
+                                            return 1;
+                                        })
+                                )
+                        )
+                )
+                .then(Commands.literal("find")
+                        .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    net.minecraft.commands.CommandSourceStack source = context.getSource();
+                                    try {
+                                        var registry = source.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+                                        java.util.List<String> paths = registry.listElementIds().toList().stream()
+                                                .map(key -> key.identifier().getPath())
+                                                .filter(path -> !path.equals("soul_speed") && !path.equals("swift_sneak") && !path.equals("wind_burst"))
+                                                .toList();
+                                        return net.minecraft.commands.SharedSuggestionProvider.suggest(paths, builder);
+                                    } catch (Exception e) {
+                                        java.util.List<String> paths = com.gbdhapa.EnchantmentDescriptions.DESCRIPTIONS.keySet().stream()
+                                                .filter(path -> !path.equals("soul_speed") && !path.equals("swift_sneak") && !path.equals("wind_burst"))
+                                                .toList();
+                                        return net.minecraft.commands.SharedSuggestionProvider.suggest(paths, builder);
+                                    }
+                                })
+                                .executes(context -> {
+                                    String query = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "query");
+                                    try {
+                                        return RerollLogic.executeFind(context.getSource(), query);
+                                    } catch (Exception e) {
+                                        return 0;
+                                    }
+                                })
+                        )
+                )
+        );
+    }
+
+    private void onServerStarted(net.minecraftforge.event.server.ServerStartedEvent event) {
+        TradeConfig.applyTradeRebalanceOverride(event.getServer());
+    }
+}
+
