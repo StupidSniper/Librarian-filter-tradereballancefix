@@ -24,7 +24,11 @@ neoForge {
 }
 
 dependencies {
-    implementation project(":common")
+    compileOnly project(":common")
+}
+
+tasks.withType(Jar).configureEach {
+    from project(":common").sourceSets.main.output
 }
 
 processResources {
