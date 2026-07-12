@@ -25,7 +25,7 @@ public class LibrarianfilterNeoForgeClient {
     }
 
     private static void onClientLogin(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) {
-        if (event.getPlayer() != null && event.getPlayer().connection.getConnection().isMemoryConnection() || event.getPlayer() != null && event.getPlayer().level().enabledFeatures().contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE)) {
+        if (event.getPlayer() != null && event.getPlayer().level().enabledFeatures().contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE)) {
             Minecraft.getInstance().execute(() -> {
                 if (Minecraft.getInstance().player != null) {
                     Minecraft.getInstance().player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
