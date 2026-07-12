@@ -85,6 +85,8 @@ public class LibrarianfilterNeoForge {
 
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("reroll")
+                .then(Commands.literal("setup")
+                        .executes(context -> RerollLogic.executeSetup(context.getSource())))
                 .then(Commands.literal("config")
                         .requires(source -> {
                             try {
