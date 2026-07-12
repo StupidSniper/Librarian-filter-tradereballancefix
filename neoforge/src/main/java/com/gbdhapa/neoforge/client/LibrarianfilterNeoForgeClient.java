@@ -33,8 +33,8 @@ public class LibrarianfilterNeoForgeClient {
                             .withStyle(style -> style
                                 .withColor(net.minecraft.ChatFormatting.RED)
                                 .withUnderlined(true)
-                                .withClickEvent(new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND, "/reroll config toggle disableTradeRebalance"))
-                                .withHoverEvent(new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT, net.minecraft.network.chat.Component.literal("Click to disable Trade Rebalance")))
+                                .withClickEvent(new net.minecraft.network.chat.ClickEvent.RunCommand("/reroll config toggle disableTradeRebalance"))
+                                .withHoverEvent(new net.minecraft.network.chat.HoverEvent.ShowText(net.minecraft.network.chat.Component.literal("Click to disable Trade Rebalance")))
                             )
                         );
                     Minecraft.getInstance().player.sendSystemMessage(msg);
