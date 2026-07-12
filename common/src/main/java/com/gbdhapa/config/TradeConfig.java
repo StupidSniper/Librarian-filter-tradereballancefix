@@ -43,27 +43,29 @@ public class TradeConfig {
     public static void applyTradeRebalanceOverride(net.minecraft.server.MinecraftServer server) {
         if (server != null) {
             try {
-                var worldData = server.getWorldData();
-                var currentConfig = worldData.getDataConfiguration();
-                var enabledFeatures = currentConfig.enabledFeatures();
+                var packRepo = server.getPackRepository();
+                java.util.List<String> activePacks = new java.util.ArrayList<>(packRepo.getSelectedIds());
                 
-                boolean hasRebalance = enabledFeatures.contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE);
+                boolean hasRebalance = activePacks.contains("trade_rebalance") || activePacks.contains("minecraft:trade_rebalance");
                 boolean shouldDisable = INSTANCE.disableTradeRebalance;
                 
+                boolean changed = false;
                 if (shouldDisable && hasRebalance) {
-                    var newFeatures = enabledFeatures.subtract(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
-                    var newConfig = new net.minecraft.world.level.WorldDataConfiguration(currentConfig.dataPacks(), newFeatures);
-                    if (worldData instanceof net.minecraft.world.level.storage.PrimaryLevelData) {
-                        ((net.minecraft.world.level.storage.PrimaryLevelData) worldData).setDataConfiguration(newConfig);
-                        server.reloadResources(server.getPackRepository().getSelectedIds());
-                    }
+                    activePacks.remove("trade_rebalance");
+                    activePacks.remove("minecraft:trade_rebalance");
+                    changed = true;
                 } else if (!shouldDisable && !hasRebalance) {
-                    var newFeatures = enabledFeatures.join(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
-                    var newConfig = new net.minecraft.world.level.WorldDataConfiguration(currentConfig.dataPacks(), newFeatures);
-                    if (worldData instanceof net.minecraft.world.level.storage.PrimaryLevelData) {
-                        ((net.minecraft.world.level.storage.PrimaryLevelData) worldData).setDataConfiguration(newConfig);
-                        server.reloadResources(server.getPackRepository().getSelectedIds());
+                    if (packRepo.isAvailable("trade_rebalance")) {
+                        activePacks.add("trade_rebalance");
+                        changed = true;
+                    } else if (packRepo.isAvailable("minecraft:trade_rebalance")) {
+                        activePacks.add("minecraft:trade_rebalance");
+                        changed = true;
                     }
+                }
+
+                if (changed) {
+                    server.reloadResources(activePacks);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
