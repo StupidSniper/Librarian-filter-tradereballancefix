@@ -132,6 +132,15 @@ public class LibrarianfilterFabric implements ModInitializer {
                                     )
                             )
                     )
+                    .then(Commands.literal("setup")
+                            .executes(context -> {
+                                try {
+                                    return RerollLogic.executeSetup(context.getSource());
+                                } catch (Exception e) {
+                                    return 0;
+                                }
+                            })
+                    )
                     .then(Commands.literal("find")
                             .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.word())
                                     .suggests((context, builder) -> {
