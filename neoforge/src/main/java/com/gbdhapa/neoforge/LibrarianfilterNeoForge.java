@@ -47,7 +47,8 @@ public class LibrarianfilterNeoForge {
             context.enqueueWork(() -> {
                 ServerPlayer player = (ServerPlayer) context.player();
                 var server = player.level().getServer();
-                if (server.getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
+                net.minecraft.server.players.NameAndId nameAndId = new net.minecraft.server.players.NameAndId(player.getGameProfile());
+                if (server.getPlayerList().isOp(nameAndId) || server.isSingleplayerOwner(nameAndId)) {
                     TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
                     TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
                     TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
@@ -64,7 +65,8 @@ public class LibrarianfilterNeoForge {
         registrar.playToServer(ConfigRequestPayload.ID, ConfigRequestPayload.CODEC, (payload, context) -> {
             context.enqueueWork(() -> {
                 ServerPlayer player = (ServerPlayer) context.player();
-                if (player.level().getServer().getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
+                net.minecraft.server.players.NameAndId nameAndId = new net.minecraft.server.players.NameAndId(player.getGameProfile());
+                if (player.level().getServer().getPlayerList().isOp(nameAndId) || player.level().getServer().isSingleplayerOwner(nameAndId)) {
                     PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                             TradeConfig.INSTANCE.enableReroll,
                             TradeConfig.INSTANCE.enableEachLevelReroll,
@@ -90,7 +92,8 @@ public class LibrarianfilterNeoForge {
                 .then(Commands.literal("config")
                         .requires(source -> {
                             try {
-                                return source.getServer().getPlayerList().isOp(new NameAndId(source.getPlayerOrException().getGameProfile()));
+                                net.minecraft.server.players.NameAndId nameAndId = new net.minecraft.server.players.NameAndId(source.getPlayerOrException().getGameProfile());
+                                return source.getServer().getPlayerList().isOp(nameAndId) || source.getServer().isSingleplayerOwner(nameAndId);
                             } catch (Exception e) {
                                 return false;
                             }

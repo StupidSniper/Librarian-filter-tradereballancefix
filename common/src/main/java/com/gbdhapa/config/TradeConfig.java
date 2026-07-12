@@ -44,27 +44,38 @@ public class TradeConfig {
         if (server != null) {
             try {
                 var packRepo = server.getPackRepository();
+                var worldData = server.getWorldData();
+                var currentConfig = worldData.getDataConfiguration();
+                var currentFeatures = currentConfig.enabledFeatures();
+                
                 java.util.List<String> activePacks = new java.util.ArrayList<>(packRepo.getSelectedIds());
                 
-                boolean hasRebalance = activePacks.contains("trade_rebalance") || activePacks.contains("minecraft:trade_rebalance");
+                boolean hasRebalanceFlag = currentFeatures.contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE);
                 boolean shouldDisable = INSTANCE.disableTradeRebalance;
                 
                 boolean changed = false;
-                if (shouldDisable && hasRebalance) {
+                net.minecraft.world.flag.FeatureFlagSet newFeatures = currentFeatures;
+                
+                if (shouldDisable && hasRebalanceFlag) {
+                    newFeatures = currentFeatures.subtract(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
                     activePacks.remove("trade_rebalance");
                     activePacks.remove("minecraft:trade_rebalance");
+                    activePacks.remove("builtin/trade_rebalance");
                     changed = true;
-                } else if (!shouldDisable && !hasRebalance) {
+                } else if (!shouldDisable && !hasRebalanceFlag) {
+                    newFeatures = currentFeatures.join(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
                     if (packRepo.isAvailable("trade_rebalance")) {
                         activePacks.add("trade_rebalance");
-                        changed = true;
                     } else if (packRepo.isAvailable("minecraft:trade_rebalance")) {
                         activePacks.add("minecraft:trade_rebalance");
-                        changed = true;
                     }
+                    changed = true;
                 }
 
                 if (changed) {
+                    var newPackConfig = new net.minecraft.world.level.DataPackConfig(activePacks, currentConfig.dataPacks().getDisabled());
+                    var newWorldConfig = new net.minecraft.world.level.WorldDataConfiguration(newPackConfig, newFeatures);
+                    worldData.setDataConfiguration(newWorldConfig);
                     server.reloadResources(activePacks);
                 }
             } catch (Exception e) {
