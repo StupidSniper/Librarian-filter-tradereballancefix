@@ -21,6 +21,19 @@ public class LibrarianfilterNeoForgeClient {
         modEventBus.addListener(LibrarianfilterNeoForgeClient::registerKeyMappings);
         modEventBus.addListener(LibrarianfilterNeoForgeClient::registerClientPayloads);
         NeoForge.EVENT_BUS.addListener(LibrarianfilterNeoForgeClient::onPlayerTick);
+        NeoForge.EVENT_BUS.addListener(LibrarianfilterNeoForgeClient::onClientLogin);
+    }
+
+    private static void onClientLogin(net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingIn event) {
+        if (event.getPlayer() != null && event.getPlayer().connection.getConnection().isMemoryConnection() || event.getPlayer() != null && event.getPlayer().level().enabledFeatures().contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE)) {
+            Minecraft.getInstance().execute(() -> {
+                if (Minecraft.getInstance().player != null) {
+                    Minecraft.getInstance().player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                        "§e[Librarian Filter] Warning: Villager Trade Rebalance experimental feature is enabled in this world! Villager book trades are biome-dependent."
+                    ));
+                }
+            });
+        }
     }
 
     public static void registerKeyMappings(RegisterKeyMappingsEvent event) {
@@ -36,7 +49,7 @@ public class LibrarianfilterNeoForgeClient {
     public static void registerClientPayloads(RegisterPayloadHandlersEvent event) {
         event.registrar("1.0.1").playToClient(OpenConfigScreenPayload.ID, OpenConfigScreenPayload.CODEC, (payload, context) -> {
             context.enqueueWork(() -> {
-                Minecraft.getInstance().setScreen(new NeoForgeTradeConfigScreen(payload.enableReroll(), payload.enableEachLevelReroll()));
+                Minecraft.getInstance().setScreenAndShow(new NeoForgeTradeConfigScreen(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance(), payload.enableSignSuggestions()));
             });
         });
     }

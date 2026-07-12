@@ -28,6 +28,7 @@ public class LibrarianfilterNeoForge {
         
         NeoForge.EVENT_BUS.addListener(this::onRightClickBlock);
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
+        NeoForge.EVENT_BUS.addListener(this::onServerStarted);
 
         LibrarianfilterNeoForgeClient.init(modEventBus);
     }
@@ -38,17 +39,24 @@ public class LibrarianfilterNeoForge {
         registrar.playToClient(TradeConfigSyncPayload.ID, TradeConfigSyncPayload.CODEC, (payload, context) -> {
             TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
             TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+            TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+            TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
         });
 
         registrar.playToServer(TradeConfigUpdatePayload.ID, TradeConfigUpdatePayload.CODEC, (payload, context) -> {
             context.enqueueWork(() -> {
                 ServerPlayer player = (ServerPlayer) context.player();
-                if (player.level().getServer().getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
+                var server = player.level().getServer();
+                if (server.getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
                     TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
                     TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+                    TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+                    TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
                     TradeConfig.save();
 
-                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll()));
+                    TradeConfig.applyTradeRebalanceOverride(server);
+
+                    PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance(), payload.enableSignSuggestions()));
                 }
             });
         });
@@ -59,7 +67,9 @@ public class LibrarianfilterNeoForge {
                 if (player.level().getServer().getPlayerList().isOp(new NameAndId(player.getGameProfile()))) {
                     PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                             TradeConfig.INSTANCE.enableReroll,
-                            TradeConfig.INSTANCE.enableEachLevelReroll
+                            TradeConfig.INSTANCE.enableEachLevelReroll,
+                            TradeConfig.INSTANCE.disableTradeRebalance,
+                            TradeConfig.INSTANCE.enableSignSuggestions
                     ));
                 }
             });
@@ -75,23 +85,100 @@ public class LibrarianfilterNeoForge {
 
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("reroll")
-                .requires(source -> {
-                    try {
-                        return source.getServer().getPlayerList().isOp(new NameAndId(source.getPlayerOrException().getGameProfile()));
-                    } catch (Exception e) {
-                        return false;
-                    }
-                })
                 .then(Commands.literal("config")
+                        .requires(source -> {
+                            try {
+                                return source.getServer().getPlayerList().isOp(new NameAndId(source.getPlayerOrException().getGameProfile()));
+                            } catch (Exception e) {
+                                return false;
+                            }
+                        })
                         .executes(context -> {
                             ServerPlayer player = context.getSource().getPlayerOrException();
                             PacketDistributor.sendToPlayer(player, new OpenConfigScreenPayload(
                                     TradeConfig.INSTANCE.enableReroll,
-                                    TradeConfig.INSTANCE.enableEachLevelReroll
+                                    TradeConfig.INSTANCE.enableEachLevelReroll,
+                                    TradeConfig.INSTANCE.disableTradeRebalance,
+                                    TradeConfig.INSTANCE.enableSignSuggestions
                             ));
                             return 1;
                         })
+                        .then(Commands.literal("toggle")
+                                .then(Commands.argument("option", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                        .suggests((context, builder) -> net.minecraft.commands.SharedSuggestionProvider.suggest(new String[]{"enableReroll", "enableEachLevelReroll", "disableTradeRebalance", "enableSignSuggestions"}, builder))
+                                        .executes(context -> {
+                                            String option = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "option");
+                                            boolean newValue = false;
+                                            switch (option) {
+                                                case "enableReroll":
+                                                    TradeConfig.INSTANCE.enableReroll = !TradeConfig.INSTANCE.enableReroll;
+                                                    newValue = TradeConfig.INSTANCE.enableReroll;
+                                                    break;
+                                                case "enableEachLevelReroll":
+                                                    TradeConfig.INSTANCE.enableEachLevelReroll = !TradeConfig.INSTANCE.enableEachLevelReroll;
+                                                    newValue = TradeConfig.INSTANCE.enableEachLevelReroll;
+                                                    break;
+                                                case "disableTradeRebalance":
+                                                    TradeConfig.INSTANCE.disableTradeRebalance = !TradeConfig.INSTANCE.disableTradeRebalance;
+                                                    newValue = TradeConfig.INSTANCE.disableTradeRebalance;
+                                                    break;
+                                                case "enableSignSuggestions":
+                                                    TradeConfig.INSTANCE.enableSignSuggestions = !TradeConfig.INSTANCE.enableSignSuggestions;
+                                                    newValue = TradeConfig.INSTANCE.enableSignSuggestions;
+                                                    break;
+                                                default:
+                                                    context.getSource().sendFailure(net.minecraft.network.chat.Component.literal("Unknown config option: " + option));
+                                                    return 0;
+                                            }
+                                            TradeConfig.save();
+                                            PacketDistributor.sendToAllPlayers(new TradeConfigSyncPayload(
+                                                    TradeConfig.INSTANCE.enableReroll,
+                                                    TradeConfig.INSTANCE.enableEachLevelReroll,
+                                                    TradeConfig.INSTANCE.disableTradeRebalance,
+                                                    TradeConfig.INSTANCE.enableSignSuggestions
+                                            ));
+                                            if (option.equals("disableTradeRebalance")) {
+                                                TradeConfig.applyTradeRebalanceOverride(context.getSource().getServer());
+                                            }
+                                            final net.minecraft.network.chat.Component msg = net.minecraft.network.chat.Component.literal("Toggled " + option + " to " + newValue);
+                                            context.getSource().sendSuccess(() -> msg, true);
+                                            return 1;
+                                        })
+                                )
+                        )
+                )
+                .then(Commands.literal("find")
+                        .then(Commands.argument("query", com.mojang.brigadier.arguments.StringArgumentType.word())
+                                .suggests((context, builder) -> {
+                                    net.minecraft.commands.CommandSourceStack source = context.getSource();
+                                    try {
+                                        var registry = source.registryAccess().lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT);
+                                        java.util.List<String> paths = registry.listElementIds().toList().stream()
+                                                .map(key -> key.identifier().getPath())
+                                                .filter(path -> !path.equals("soul_speed") && !path.equals("swift_sneak") && !path.equals("wind_burst"))
+                                                .toList();
+                                        return net.minecraft.commands.SharedSuggestionProvider.suggest(paths, builder);
+                                    } catch (Exception e) {
+                                        java.util.List<String> paths = com.gbdhapa.EnchantmentDescriptions.DESCRIPTIONS.keySet().stream()
+                                                .filter(path -> !path.equals("soul_speed") && !path.equals("swift_sneak") && !path.equals("wind_burst"))
+                                                .toList();
+                                        return net.minecraft.commands.SharedSuggestionProvider.suggest(paths, builder);
+                                    }
+                                })
+                                .executes(context -> {
+                                    String query = com.mojang.brigadier.arguments.StringArgumentType.getString(context, "query");
+                                    try {
+                                        return RerollLogic.executeFind(context.getSource(), query);
+                                    } catch (Exception e) {
+                                        return 0;
+                                    }
+                                })
+                        )
                 )
         );
+    }
+
+    private void onServerStarted(net.neoforged.neoforge.event.server.ServerStartedEvent event) {
+        TradeConfig.applyTradeRebalanceOverride(event.getServer());
     }
 }

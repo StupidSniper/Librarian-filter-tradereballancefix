@@ -6,12 +6,14 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 
-public record TradeConfigSyncPayload(boolean enableReroll, boolean enableEachLevelReroll) implements CustomPacketPayload {
+public record TradeConfigSyncPayload(boolean enableReroll, boolean enableEachLevelReroll, boolean disableTradeRebalance, boolean enableSignSuggestions) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<TradeConfigSyncPayload> ID = new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath("librarian-filter", "trade_config_sync"));
     public static final StreamCodec<RegistryFriendlyByteBuf, TradeConfigSyncPayload> CODEC = StreamCodec.composite(
             ByteBufCodecs.BOOL, TradeConfigSyncPayload::enableReroll,
             ByteBufCodecs.BOOL, TradeConfigSyncPayload::enableEachLevelReroll,
+            ByteBufCodecs.BOOL, TradeConfigSyncPayload::disableTradeRebalance,
+            ByteBufCodecs.BOOL, TradeConfigSyncPayload::enableSignSuggestions,
             TradeConfigSyncPayload::new
     );
 

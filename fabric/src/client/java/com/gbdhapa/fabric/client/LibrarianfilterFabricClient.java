@@ -15,12 +15,26 @@ public class LibrarianfilterFabricClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(TradeConfigSyncPayload.ID, (payload, context) -> {
             TradeConfig.INSTANCE.enableReroll = payload.enableReroll();
             TradeConfig.INSTANCE.enableEachLevelReroll = payload.enableEachLevelReroll();
+            TradeConfig.INSTANCE.disableTradeRebalance = payload.disableTradeRebalance();
+            TradeConfig.INSTANCE.enableSignSuggestions = payload.enableSignSuggestions();
         });
 
         ClientPlayNetworking.registerGlobalReceiver(OpenConfigScreenPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                context.client().setScreen(new FabricTradeConfigScreen(payload.enableReroll(), payload.enableEachLevelReroll()));
+                context.client().setScreenAndShow(new FabricTradeConfigScreen(payload.enableReroll(), payload.enableEachLevelReroll(), payload.disableTradeRebalance(), payload.enableSignSuggestions()));
             });
+        });
+
+        net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            if (handler.enabledFeatures().contains(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE)) {
+                client.execute(() -> {
+                    if (client.player != null) {
+                        client.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
+                            "§e[Librarian Filter] Warning: Villager Trade Rebalance experimental feature is enabled in this world! Villager book trades are biome-dependent."
+                        ));
+                    }
+                });
+            }
         });
     }
 }
