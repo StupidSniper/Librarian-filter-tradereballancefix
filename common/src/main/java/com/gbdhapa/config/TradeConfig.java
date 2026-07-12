@@ -55,12 +55,14 @@ public class TradeConfig {
                     var newConfig = new net.minecraft.world.level.WorldDataConfiguration(currentConfig.dataPacks(), newFeatures);
                     if (worldData instanceof net.minecraft.world.level.storage.PrimaryLevelData) {
                         ((net.minecraft.world.level.storage.PrimaryLevelData) worldData).setDataConfiguration(newConfig);
+                        server.reloadResources(server.getPackRepository().getSelectedIds());
                     }
                 } else if (!shouldDisable && !hasRebalance) {
                     var newFeatures = enabledFeatures.join(net.minecraft.world.flag.FeatureFlagSet.of(net.minecraft.world.flag.FeatureFlags.TRADE_REBALANCE));
                     var newConfig = new net.minecraft.world.level.WorldDataConfiguration(currentConfig.dataPacks(), newFeatures);
                     if (worldData instanceof net.minecraft.world.level.storage.PrimaryLevelData) {
                         ((net.minecraft.world.level.storage.PrimaryLevelData) worldData).setDataConfiguration(newConfig);
+                        server.reloadResources(server.getPackRepository().getSelectedIds());
                     }
                 }
             } catch (Exception e) {

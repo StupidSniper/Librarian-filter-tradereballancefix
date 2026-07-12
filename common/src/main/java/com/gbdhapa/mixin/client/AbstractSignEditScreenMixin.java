@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import com.gbdhapa.EnchantmentDescriptions;
+import com.gbdhapa.EnchantmentInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,57 +38,46 @@ public abstract class AbstractSignEditScreenMixin extends Screen {
     private static final ItemStack ENCHANTED_BOOK_STACK = new ItemStack(Items.ENCHANTED_BOOK);
 
     @Unique
-    private static class EnchantmentInfo {
-        final String path;
-        final int maxLevel;
-
-        EnchantmentInfo(String path, int maxLevel) {
-            this.path = path;
-            this.maxLevel = maxLevel;
-        }
-    }
-
-    @Unique
-    private static final List<EnchantmentInfo> ALL_ENCHANTMENTS = List.of(
-        new EnchantmentInfo("aqua_affinity", 1),
-        new EnchantmentInfo("bane_of_arthropods", 5),
-        new EnchantmentInfo("blast_protection", 4),
-        new EnchantmentInfo("breach", 4),
-        new EnchantmentInfo("channeling", 1),
-        new EnchantmentInfo("curse_of_binding", 1),
-        new EnchantmentInfo("curse_of_vanishing", 1),
-        new EnchantmentInfo("depth_strider", 3),
-        new EnchantmentInfo("density", 5),
-        new EnchantmentInfo("efficiency", 5),
-        new EnchantmentInfo("feather_falling", 4),
-        new EnchantmentInfo("fire_aspect", 2),
-        new EnchantmentInfo("fire_protection", 4),
-        new EnchantmentInfo("flame", 1),
-        new EnchantmentInfo("fortune", 3),
-        new EnchantmentInfo("frost_walker", 2),
-        new EnchantmentInfo("impaling", 5),
-        new EnchantmentInfo("infinity", 1),
-        new EnchantmentInfo("knockback", 2),
-        new EnchantmentInfo("looting", 3),
-        new EnchantmentInfo("loyalty", 3),
-        new EnchantmentInfo("luck_of_the_sea", 3),
-        new EnchantmentInfo("lure", 3),
-        new EnchantmentInfo("mending", 1),
-        new EnchantmentInfo("multishot", 1),
-        new EnchantmentInfo("piercing", 4),
-        new EnchantmentInfo("power", 5),
-        new EnchantmentInfo("projectile_protection", 4),
-        new EnchantmentInfo("protection", 4),
-        new EnchantmentInfo("punch", 2),
-        new EnchantmentInfo("quick_charge", 3),
-        new EnchantmentInfo("respiration", 3),
-        new EnchantmentInfo("riptide", 3),
-        new EnchantmentInfo("sharpness", 5),
-        new EnchantmentInfo("silk_touch", 1),
-        new EnchantmentInfo("smite", 5),
-        new EnchantmentInfo("sweeping_edge", 3),
-        new EnchantmentInfo("thorns", 3),
-        new EnchantmentInfo("unbreaking", 3)
+    private static final List<com.gbdhapa.EnchantmentInfo> ALL_ENCHANTMENTS = List.of(
+        new com.gbdhapa.EnchantmentInfo("aqua_affinity", 1),
+        new com.gbdhapa.EnchantmentInfo("bane_of_arthropods", 5),
+        new com.gbdhapa.EnchantmentInfo("blast_protection", 4),
+        new com.gbdhapa.EnchantmentInfo("breach", 4),
+        new com.gbdhapa.EnchantmentInfo("channeling", 1),
+        new com.gbdhapa.EnchantmentInfo("curse_of_binding", 1),
+        new com.gbdhapa.EnchantmentInfo("curse_of_vanishing", 1),
+        new com.gbdhapa.EnchantmentInfo("depth_strider", 3),
+        new com.gbdhapa.EnchantmentInfo("density", 5),
+        new com.gbdhapa.EnchantmentInfo("efficiency", 5),
+        new com.gbdhapa.EnchantmentInfo("feather_falling", 4),
+        new com.gbdhapa.EnchantmentInfo("fire_aspect", 2),
+        new com.gbdhapa.EnchantmentInfo("fire_protection", 4),
+        new com.gbdhapa.EnchantmentInfo("flame", 1),
+        new com.gbdhapa.EnchantmentInfo("fortune", 3),
+        new com.gbdhapa.EnchantmentInfo("frost_walker", 2),
+        new com.gbdhapa.EnchantmentInfo("impaling", 5),
+        new com.gbdhapa.EnchantmentInfo("infinity", 1),
+        new com.gbdhapa.EnchantmentInfo("knockback", 2),
+        new com.gbdhapa.EnchantmentInfo("looting", 3),
+        new com.gbdhapa.EnchantmentInfo("loyalty", 3),
+        new com.gbdhapa.EnchantmentInfo("luck_of_the_sea", 3),
+        new com.gbdhapa.EnchantmentInfo("lure", 3),
+        new com.gbdhapa.EnchantmentInfo("mending", 1),
+        new com.gbdhapa.EnchantmentInfo("multishot", 1),
+        new com.gbdhapa.EnchantmentInfo("piercing", 4),
+        new com.gbdhapa.EnchantmentInfo("power", 5),
+        new com.gbdhapa.EnchantmentInfo("projectile_protection", 4),
+        new com.gbdhapa.EnchantmentInfo("protection", 4),
+        new com.gbdhapa.EnchantmentInfo("punch", 2),
+        new com.gbdhapa.EnchantmentInfo("quick_charge", 3),
+        new com.gbdhapa.EnchantmentInfo("respiration", 3),
+        new com.gbdhapa.EnchantmentInfo("riptide", 3),
+        new com.gbdhapa.EnchantmentInfo("sharpness", 5),
+        new com.gbdhapa.EnchantmentInfo("silk_touch", 1),
+        new com.gbdhapa.EnchantmentInfo("smite", 5),
+        new com.gbdhapa.EnchantmentInfo("sweeping_edge", 3),
+        new com.gbdhapa.EnchantmentInfo("thorns", 3),
+        new com.gbdhapa.EnchantmentInfo("unbreaking", 3)
     );
 
     protected AbstractSignEditScreenMixin(Component title) {
